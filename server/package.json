@@ -1,0 +1,32 @@
+{
+  "name": "aimware-external-radar-server",
+  "version": "1.0.0",
+  "description": "External Aimware radar in your browser using Lua & NodeJS",
+  "main": "main.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Slype/aimware-external-radar.git"
+  },
+  "keywords": [
+    "slype",
+    "aimware",
+    "aimware",
+    "lua",
+    "aimware",
+    "radar",
+    "external",
+    "radar",
+    "csgo"
+  ],
+  "author": "Slype",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Slype/aimware-external-radar/issues"
+  },
+  "homepage": "https://github.com/Slype/aimware-external-radar#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "socketio": "^1.0.0"
+  }
+}
