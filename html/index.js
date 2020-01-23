@@ -5,7 +5,7 @@ let currentMap, currentMapImage;
 let playerDotSize;
 // Other settings
 let canvas;
-let container = document.getElementById("container");
+let container = document.body;
 let notPlayingElement = document.getElementById("notPlaying");
 let timeoutLoop;
 let timeoutLoopDelay = 1000 * 20; // 20 seconds

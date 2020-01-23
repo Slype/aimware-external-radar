@@ -14,16 +14,7 @@ body {
     align-items: center;
 }
 
-#container {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-}
-
-#container canvas {
+canvas {
     z-index: 2;
 }
 
