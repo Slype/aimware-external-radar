@@ -2,13 +2,13 @@ local serverIP = "ipAddress"; -- IP address of server
 local serverPort = 10001;
 local client = network.Socket("UDP");
 local previousTickSent = globals.TickCount();
-local ticksBetweenLoop = 50; -- Time between data being sent
+local ticksBetweenLoop = 10; -- Time between data being sent
 
 local function tickLoop()
 	if globals.TickCount() - previousTickSent > ticksBetweenLoop then
-		ticksBetweenLoop = globals.TickCount();
+		previousTickSent = globals.TickCount();
 		-- Locate all players
-		local players = entities.FindByClass( "CCSPlayer" );
+		local players = entities.FindByClass("CCSPlayer");
 		local data = "";
 		-- Figure out which players are alive/can be seen
 		for i = 1, #players do
