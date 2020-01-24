@@ -48,14 +48,20 @@ function collectPlayers()
 		name = string.gsub(name, ";", "%3B"); -- ; not allowed
 		name = string.gsub(name, ",", "%2C"); -- , not allowed
 		local team = player:GetTeamNumber();
+		-- Steamid
+		local steamid = "";
+		local playerInfo = client.GetPlayerInfo(player:GetIndex())´;
+		if playerInfo ~= nil and playerInfo["IsBot"] == false then
+			steamid = playerInfo["SteamID"];
+		end
 		-- Position & View angle
 		local x, y, z = player:GetAbsOrigin();
 		local angle = player:GetPropFloat("m_angEyeAngles[1]");
 		-- Weapon
-		local weapon_name = "";
+		local weaponName = "";
         local weapon = player:GetPropEntity('m_hActiveWeapon');
         if (weapon ~= nil) then
-            weapon_name = weapon:GetName();
+            weaponName = weapon:GetName();
         end
 		-- Health
 		local alive = player:IsAlive();
@@ -63,8 +69,8 @@ function collectPlayers()
 		-- Ping
 		local ping = entities.GetPlayerResources():GetPropInt("m_iPing", player:GetIndex());
 		-- Combined string
-		local playerString = name .. "," .. team .. "," .. x .. "," .. y .. "," .. z .. "," .. angle .. ",";
-		playerString = playerString .. weapon_name .. "," .. alive .. "," .. health .. "," .. ping;
+		local playerString = name .. "," .. team .. "," .. steamid .. "," .. x .. "," .. y .. "," .. z .. "," .. angle .. ",";
+		playerString = playerString .. weaponName .. "," .. alive .. "," .. health .. "," .. ping;
 		data = data .. ";" .. playerString;
 	end
 	if(string.len(data) > 1) then
@@ -92,9 +98,9 @@ end
 -- Return list of smokes as string
 function collectSmokes()
 	local data = "";
-	local active_smokes = entities.FindByClass("CSmokeGrenadeProjectile");
-    for i = 1, #active_smokes do
-        local smoke = active_smokes[i];
+	local activeSmokes = entities.FindByClass("CSmokeGrenadeProjectile");
+    for i = 1, #activeSmokes do
+        local smoke = activeSmokes[i];
 		local x, y, z = smoke:GetAbsOrigin();
     	local smokeTick = smoke:GetProp("m_nSmokeEffectTickBegin");
     	if (smokeTick ~= 0 and (globals.TickCount() - smokeTick) * globals.TickInterval() < 17.5) then
