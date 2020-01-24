@@ -1,8 +1,22 @@
+-- UDP/Server Settings
 local serverIP = "ipAddress"; -- IP address of server
 local serverPort = 10001;
+local serverAuthKey = ""; -- Authentication, personal & connected to user
+-- UDP client
 local client = network.Socket("UDP");
-local previousTickSent = globals.TickCount();
+-- Timing variables for main loop
+local previousTickSent = 0;
 local ticksBetweenLoop = 10; -- Time between data being sent
+
+-- Send data over UDP by calling this function
+function sendData(data)
+	if client ~= nil then
+		-- Append authentication key
+		data = addHeader("auth", serverAuthKey) .. data;
+		-- Send data
+		client:SendTo(serverIP, serverPort, data);
+	end
+end
 
 -- Main loop
 function loop()
@@ -18,7 +32,7 @@ function loop()
 		-- Add it all together
 		local data = map .. players .. bomb .. smokes .. rounds;
 		-- Send data over UDP
-		client:SendTo(serverIP, serverPort, data);
+		sendData(data);
 	end
 end
 
@@ -33,7 +47,7 @@ function gameEventHandler(event)
 	if(string.len(data) > 0)
 		-- Send data over UDP
 		data = addHeader("event", data);
-		client:SendTo(serverIP, serverPort, data);
+		sendData(data);
 	end
 end
 
