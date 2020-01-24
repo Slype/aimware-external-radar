@@ -14,9 +14,9 @@ const udpPort = 10001;
 const socketPort = 10000;
 
 // Load maps data
-let maps;
+let maps = [];
 try {
-    maps = fs.readFileSync(htmlPath + "/maps.json", "utf-8");
+    maps = JSON.parse(fs.readFileSync(htmlPath + "/maps.json", "utf-8"));
 }
 catch(err){
     console.log("Unable to load maps data");
@@ -31,9 +31,9 @@ udpServer.on("listening", () => {
 
 // Listen for incomming UDP messages
 udpServer.on("message", (msg, rinfo) => {
-    let data = parseData(msg);
+    let data = parseData(msg.toString());
     if(data)
-        io.emit(data);
+        io.emit("data", data);
 });
 
 // Start UDP server
@@ -52,7 +52,7 @@ http.listen(socketPort, () => {
 
 function parseData(str){
     let result = {};
-    str.split("<>");
+    str = str.split("<>");
     if(str.length != 2)
         return false;
     // Parse and validate map name
@@ -62,10 +62,11 @@ function parseData(str){
     // Split string into player strings
     result.players = str[1].split(";").map(player => {
         // Parse & validate data about player
-        let val = player.split(",");
-        if(val.length = 6)
+        let v = player.split(",");
+        if(v.length != 6)
             return false;
         if(isNaN(parseInt(v[1])) || isNaN(parseFloat(v[2])) || isNaN(parseFloat(v[3])) || isNaN(parseFloat(v[4])) || isNaN(parseInt(v[5])))
+            return false;
         return {
             name: decodeURIComponent(v[0]), team: parseInt(v[1]),
             x: v[2],    y: v[3],    z: v[4],   health: v[5]
