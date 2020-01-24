@@ -35,9 +35,7 @@ function draw(){
             fill(player.team == "2" ? "#e28f00" : "#14e0b7");
             // Calculate 2D map coordinate
             let pos = worldTo2Dcoordinates(player.x, player.y);
-            let px = map(pos.x, 0, 1024, 0, width);
-			let py = map(pos.y, 0, 1024, 0, height);
-            circle(px, py, playerWidth); // Player circle
+            circle(pos.x, pos.y, playerDotSize); // Player circle
         }
     }
 }
@@ -63,12 +61,12 @@ window.addEventListener("resize", e => {
 
 socket.on("data",  data => {
     // If current map is no longer valid, update it
-    if(currentMap || currentMap.name != data.map){
+    if(!currentMap || !currentMapImage || currentMap.name != data.map){
         currentMap = currentMapImage = undefined;
         for(let map of maps){
             if(map.name == data.map){
                 currentMap = map;
-                currentMapImage = currentMapImage || undefined;
+                currentMapImage = map.image;
                 notPlayingElement.style.display = "none";
                 break;
             }
@@ -97,12 +95,8 @@ function calcSize(parent, aspectRatio = 1){
 function worldTo2Dcoordinates(x, y){
 	if(!currentMap)
 		return false;
-	pos_x = currentMap.x;
-	pos_y = currentMap.y;
-	scale_factor = currentMap.scale;
-
-	x_prime = (x - pos_x) / scale_factor;
-	y_prime = (pos_y - y) / scale_factor;
-
-	return {"x": x_prime, "y": y_prime};
+    return {
+        x: (Math.abs(currentMap.x) + x) / (currentMap.scale * 1024) * canvas.width,
+        y: (Math.abs(currentMap.y) - y) / (currentMap.scale * 1024) * canvas.height
+    };
 };
