@@ -10,7 +10,7 @@ local ticksBetweenLoop = 10; -- Time between data being sent
 
 -- Send data over UDP by calling this function
 function sendData(data)
-	if client ~= nil then
+	if(client ~= nil) then
 		-- Append authentication key
 		data = encodeHeader("auth", serverAuthKey) .. data;
 		-- Send data
@@ -20,7 +20,7 @@ end
 
 -- Main loop
 function loop()
-	if globals.TickCount() - previousTickSent > ticksBetweenLoop then
+	if(globals.TickCount() - previousTickSent > ticksBetweenLoop) then
 		-- Update previous tick
 		previousTickSent = globals.TickCount();
 		-- Fetch data
@@ -39,12 +39,12 @@ end
 -- Handles game events
 function gameEventHandler(event)
 	local data = "";
-	if event:GetName() == "round_start" then
+	if(event:GetName() == "round_start") then
 		data = "round_start";
-	else if event:GetName() == "round_end" then
+	elseif(event:GetName() == "round_end") then
         data = "round_end";
 	end
-	if(string.len(data) > 0)
+	if(data:len() > 0) then
 		-- Send data over UDP
 		data = encodeHeader("event", data);
 		sendData(data);
@@ -65,7 +65,7 @@ function collectPlayers()
 		-- Steamid
 		local steamid = "";
 		local playerInfo = client.GetPlayerInfo(player:GetIndex());
-		if playerInfo ~= nil and playerInfo["IsBot"] == false then
+		if(playerInfo ~= nil and playerInfo["IsBot"] == false) then
 			steamid = playerInfo["SteamID"];
 		end
 		-- Position & View angle
@@ -74,7 +74,7 @@ function collectPlayers()
 		-- Weapon
 		local weaponName = "";
         local weapon = player:GetPropEntity('m_hActiveWeapon');
-        if (weapon ~= nil) then
+        if(weapon ~= nil) then
             weaponName = weapon:GetName();
         end
 		-- Health
@@ -96,11 +96,13 @@ end
 function collectC4()
 	local carriedC4 = entities.FindByClass("CC4")[1];
     local plantedC4 = entities.FindByClass("CPlantedC4")[1];
-	local x = y = z = "";
+	local x = "";
+	local y = "";
+	local z = "";
 	local time = 0;
 	if(carriedC4 ~= nil) then
 		x, y, z = carriedC4:GetAbsOrigin();
-	else if(plantedC4 ~= nil) then
+	elseif(plantedC4 ~= nil) then
 		x, y, z = plantedC4:GetAbsOrigin();
 		time = plantedC4:GetPropFloat("m_flDefuseCountDown");
 	end
@@ -115,7 +117,7 @@ function collectSmokes()
         local smoke = activeSmokes[i];
 		local x, y, z = smoke:GetAbsOrigin();
     	local smokeTick = smoke:GetProp("m_nSmokeEffectTickBegin");
-    	if (smokeTick ~= 0 and (globals.TickCount() - smokeTick) * globals.TickInterval() < 17.5) then
+    	if(smokeTick ~= 0 and (globals.TickCount() - smokeTick) * globals.TickInterval() < 17.5) then
 			table.insert(arr, encodeKey("x", x) .. "," .. encodeKey("y", y) .. "," .. encodeKey("z", z));
 		end
 	end
@@ -149,7 +151,7 @@ function encodeList(arr)
 	for i = 1 , #arr do
 		data = ";" .. arr[i]:gsub(";", "%3B");
 	end
-	if data:len() > 0 then
+	if(data:len() > 0) then
 		data = data:sub(2);
 	end
 	return data;
@@ -160,7 +162,7 @@ function encodeKeys(obj)
 	for i = 1 , #arr do
 		data = "," .. encodeKey(obj[i][1], obj[i][2]);
 	end
-	if data:len() > 0 then
+	if(data:len() > 0) then
 		data = data:sub(2);
 	end
 	return data
