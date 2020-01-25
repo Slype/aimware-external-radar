@@ -12,7 +12,7 @@ local ticksBetweenLoop = 10; -- Time between data being sent
 function sendData(data)
 	if client ~= nil then
 		-- Append authentication key
-		data = addHeader("auth", serverAuthKey) .. data;
+		data = encodeHeader("auth", serverAuthKey) .. data;
 		-- Send data
 		client:SendTo(serverIP, serverPort, data);
 	end
@@ -24,7 +24,7 @@ function loop()
 		-- Update previous tick
 		previousTickSent = globals.TickCount();
 		-- Fetch data
-		local map = addHeader("map", engine.GetMapName());
+		local map = encodeHeader("map", engine.GetMapName());
 		local players = collectPlayers();
 		local bomb = collectC4();
 		local smokes = collectSmokes();
@@ -46,25 +46,25 @@ function gameEventHandler(event)
 	end
 	if(string.len(data) > 0)
 		-- Send data over UDP
-		data = addHeader("event", data);
+		data = encodeHeader("event", data);
 		sendData(data);
 	end
 end
 
 -- Returns list of players as string
 function collectPlayers()
-	local data = "";
+	local arr = {};
 	local players = entities.FindByClass("CCSPlayer");
     for i = 1, #players do
         local player = players[i];
 		-- General info
 		local name = player:GetName();
-		name = string.gsub(name, ";", "%3B"); -- ; not allowed
-		name = string.gsub(name, ",", "%2C"); -- , not allowed
+		name = name:gsub(";", "%3B"); -- ; not allowed
+		name = name:gsub(",", "%2C"); -- , not allowed
 		local team = player:GetTeamNumber();
 		-- Steamid
 		local steamid = "";
-		local playerInfo = client.GetPlayerInfo(player:GetIndex())´;
+		local playerInfo = client.GetPlayerInfo(player:GetIndex());
 		if playerInfo ~= nil and playerInfo["IsBot"] == false then
 			steamid = playerInfo["SteamID"];
 		end
@@ -78,19 +78,18 @@ function collectPlayers()
             weaponName = weapon:GetName();
         end
 		-- Health
-		local alive = player:IsAlive();
+		local alive = player:IsAlive() and 1 or 0;
 		local health = player:GetHealth();
 		-- Ping
 		local ping = entities.GetPlayerResources():GetPropInt("m_iPing", player:GetIndex());
 		-- Combined string
-		local playerString = name .. "," .. team .. "," .. steamid .. "," .. x .. "," .. y .. "," .. z .. "," .. angle .. ",";
-		playerString = playerString .. weaponName .. "," .. alive .. "," .. health .. "," .. ping;
-		data = data .. ";" .. playerString;
+		data = encodeKeys({
+			{"name", name}, {"team", team}, {"steamid", steamid}, {"x", x}, {"y", y}, {"z", z},
+			{"angle", angle}, {"weaponName", weaponName}, {"alive", alive}, {"health", health}, {"ping", ping}
+		});
+		table.insert(arr, data);
 	end
-	if(string.len(data) > 1) then
-		data = string.sub(data, 1);
-	end
-	return addHeader("players", data);
+	return encodeHeader("players", encodeList(arr));
 end
 
 -- Returns position of C4 as string
@@ -105,26 +104,22 @@ function collectC4()
 		x, y, z = plantedC4:GetAbsOrigin();
 		time = plantedC4:GetPropFloat("m_flDefuseCountDown");
 	end
-	data = x .. "," .. y .. "," .. z .. "," .. time;
-	return addHeader("bomb", data);
+	return encodeHeader("bomb", encodeKey("x", x) .. "," .. encodeKey("y", y) .. "," .. encodeKey("z", z).. "," .. encodeKey("time", time));
 end
 
 -- Return list of smokes as string
 function collectSmokes()
-	local data = "";
+	local arr = {};
 	local activeSmokes = entities.FindByClass("CSmokeGrenadeProjectile");
     for i = 1, #activeSmokes do
         local smoke = activeSmokes[i];
 		local x, y, z = smoke:GetAbsOrigin();
     	local smokeTick = smoke:GetProp("m_nSmokeEffectTickBegin");
     	if (smokeTick ~= 0 and (globals.TickCount() - smokeTick) * globals.TickInterval() < 17.5) then
-			data = data .. ";" x .. "," .. y .. "," .. z;
+			table.insert(arr, encodeKey("x", x) .. "," .. encodeKey("y", y) .. "," .. encodeKey("z", z));
 		end
 	end
-	if(string.len(data) > 0) then
-		data = string.sub(data, 1);
-	end
-	return addHeader("smokes", data);
+	return encodeHeader("smokes", encodeList(arr));
 end
 
 function collectRounds()
@@ -134,19 +129,50 @@ function collectRounds()
     for i, team in ipairs(teams) do
         rounds = rounds + team:GetPropInt('m_scoreTotal');
     end
-	if(string.len(data) > 0) then
-		data = string.sub(data, 1);
+	if(data:len() > 0) then
+		data = data:sub(2);
 	end
-	return addHeader("rounds", data);
+	return encodeHeader("rounds", data);
 end
 
 -- Adds header to beginning of string such that string = <header|data>
-function addHeader(header, data)
+function encodeHeader(header, data)
 	-- Replace illegal chars
-	data = string.gsub(data, "<", "%3C");
-	data = string.gsub(data, "<", "%3E");
-	data = string.gsub(data, "<", "%7C");
+	data = data:gsub("<", "%3C");
+	data = data:gsub("|", "%3E");
+	data = data:gsub(">", "%7C");
 	return "<" .. header .. "|" .. data  .. ">";
+end
+
+function encodeList(arr)
+	data = "";
+	for i = 1 , #arr do
+		data = ";" .. arr[i]:gsub(";", "%3B");
+	end
+	if data:len() > 0 then
+		data = data:sub(2);
+	end
+	return data;
+end
+
+function encodeKeys(obj)
+	data = "";
+	for i = 1 , #arr do
+		data = "," .. encodeKey(obj[i][1], obj[i][2]);
+	end
+	if data:len() > 0 then
+		data = data:sub(2);
+	end
+	return data
+end
+
+-- Turn key & val into string pair such that string = [key:pair]
+function encodeKey(key, data)
+	-- Replace illegal chars
+	data = data:gsub("{", "%7B");
+	data = data:gsub("}", "%7D");
+	data = data:gsub(":", "%3A");
+	return "{" .. key .. ":" .. data  .. "}";
 end
 
 -- Listeners
