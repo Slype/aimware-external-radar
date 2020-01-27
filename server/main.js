@@ -31,7 +31,7 @@ udpServer.on("listening", () => {
 
 // Listen for incomming UDP messages
 udpServer.on("message", (msg, rinfo) => {
-    let data = parseData(msg.toString());
+    let data = parseData(msg.toString()); // Function currently not fit to handle this version of data
     if(data)
         io.emit("data", data);
 });
@@ -49,6 +49,14 @@ app.get("/*", (req, res) => res.sendFile(htmlPath + req.url));
 http.listen(socketPort, () => {
     console.log("Socket listening on 0.0.0.0:" + socketPort);
 });
+
+function parseDataFromUDP(str){
+    if(str.length == 0)
+        return false;
+    let groups = str.(/(\<[^\>]{1,}\>)/g);
+    if(!groups)
+        return false;
+}
 
 function parseData(str){
     let result = {};
