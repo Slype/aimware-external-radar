@@ -1,7 +1,7 @@
 -- UDP/Server Settings
 local serverIP = "ipAddress"; -- IP address of server
 local serverPort = 10001;
-local serverAuthKey = ""; -- Authentication, personal & connected to user
+local serverAuthKey = "key"; -- Authentication, personal & connected to user
 -- UDP client
 local client = network.Socket("UDP");
 -- Timing variables for main loop
@@ -63,11 +63,12 @@ function collectPlayers()
 		name = name:gsub(",", "%2C"); -- , not allowed
 		local team = player:GetTeamNumber();
 		-- Steamid
-		local steamid = "";
-		local playerInfo = client.GetPlayerInfo(player:GetIndex());
-		if(playerInfo ~= nil and playerInfo["IsBot"] == false) then
-			steamid = playerInfo["SteamID"];
-		end
+		local steamid = ""; -- [todo] Broken
+		-- [debug]
+		--local playerInfo = client.GetPlayerInfo(player:GetIndex());
+		--if(playerInfo ~= nil and playerInfo["IsBot"] == false) then
+		--	steamid = playerInfo["SteamID"];
+		--end
 		-- Position & View angle
 		local x, y, z = player:GetAbsOrigin();
 		local angle = player:GetPropFloat("m_angEyeAngles[1]");
@@ -82,9 +83,9 @@ function collectPlayers()
 		local health = player:GetHealth();
 		-- Ping
 		local ping = entities.GetPlayerResources():GetPropInt("m_iPing", player:GetIndex());
-		-- Combined string
+		-- Combined string --
 		data = encodeKeys({
-			{"name", name}, {"team", team}, {"steamid", steamid}, {"x", x}, {"y", y}, {"z", z},
+			{"name", name}, {"team", team}, {"x", x}, {"y", y}, {"z", z}, {"steamid", steamid},
 			{"angle", angle}, {"weaponName", weaponName}, {"alive", alive}, {"health", health}, {"ping", ping}
 		});
 		table.insert(arr, data);
@@ -99,14 +100,14 @@ function collectC4()
 	local x = "";
 	local y = "";
 	local z = "";
-	local time = 0;
+	local t = 0;
 	if(carriedC4 ~= nil) then
 		x, y, z = carriedC4:GetAbsOrigin();
 	elseif(plantedC4 ~= nil) then
 		x, y, z = plantedC4:GetAbsOrigin();
-		time = plantedC4:GetPropFloat("m_flDefuseCountDown");
+		t = plantedC4:GetPropFloat("m_flDefuseCountDown");
 	end
-	return encodeHeader("bomb", encodeKey("x", x) .. "," .. encodeKey("y", y) .. "," .. encodeKey("z", z).. "," .. encodeKey("time", time));
+	return encodeHeader("bomb", encodeKey("x", x) .. "," .. encodeKey("y", y) .. "," .. encodeKey("z", z).. "," .. encodeKey("time", t));
 end
 
 -- Return list of smokes as string
@@ -125,6 +126,7 @@ function collectSmokes()
 end
 
 function collectRounds()
+	-- [todo] Broken
 	local data = "";
 	local rounds = 0;
 	local teams = entities.FindByClass("CTeam");
@@ -147,9 +149,9 @@ function encodeHeader(header, data)
 end
 
 function encodeList(arr)
-	data = "";
+	local data = "";
 	for i = 1 , #arr do
-		data = ";" .. arr[i]:gsub(";", "%3B");
+		data = data .. ";" .. arr[i]:gsub(";", "%3B");
 	end
 	if(data:len() > 0) then
 		data = data:sub(2);
@@ -158,9 +160,9 @@ function encodeList(arr)
 end
 
 function encodeKeys(obj)
-	data = "";
-	for i = 1 , #arr do
-		data = "," .. encodeKey(obj[i][1], obj[i][2]);
+	local data = "";
+	for i = 1 , #obj do
+		data = data .. "," .. encodeKey(obj[i][1], obj[i][2]);
 	end
 	if(data:len() > 0) then
 		data = data:sub(2);
@@ -171,6 +173,7 @@ end
 -- Turn key & val into string pair such that string = [key:pair]
 function encodeKey(key, data)
 	-- Replace illegal chars
+	data = tostring(data)
 	data = data:gsub("{", "%7B");
 	data = data:gsub("}", "%7D");
 	data = data:gsub(":", "%3A");
@@ -178,8 +181,8 @@ function encodeKey(key, data)
 end
 
 -- Listeners
-client.AllowListener("round_start");
-client.AllowListener("round_end");
+--client.AllowListener("round_start");
+--client.AllowListener("round_end");
 
 -- Register callbacks
 callbacks.Register( "Draw", "loop", loop);
