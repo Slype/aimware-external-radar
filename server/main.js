@@ -15,11 +15,17 @@ const socketPort = 10000;
 
 // Load maps data
 let maps = [];
-try {
-    maps = JSON.parse(fs.readFileSync(htmlPath + "/maps.json", "utf-8"));
-}
+try { maps = JSON.parse(fs.readFileSync(htmlPath + "/maps.json", "utf-8")); }
 catch(err){
     console.log("Unable to load maps data");
+    process.exit(1);
+}
+
+// Load users
+let users = []; // array of obj: {"userid": "133337", "username": "example", "authKey": "a0s9d8asd"}
+try { users = JSON.parse(fs.readFileSync(__dirname + "/secret_users.json", "utf-8")); }
+catch(err){
+    console.log("Unable to load users");
     process.exit(1);
 }
 
@@ -31,7 +37,7 @@ udpServer.on("listening", () => {
 
 // Listen for incomming UDP messages
 udpServer.on("message", (msg, rinfo) => {
-    let data = parseData(msg.toString()); // Function currently not fit to handle this version of data
+    let data = parseData(msg.toString());
     if(data)
         io.emit("data", data);
 });
@@ -50,35 +56,48 @@ http.listen(socketPort, () => {
     console.log("Socket listening on 0.0.0.0:" + socketPort);
 });
 
-function parseDataFromUDP(str){
-    if(str.length == 0)
+// Parses incomming UDP data
+function parseData(str){
+    let data = {};
+	const validDataKeys = ["auth", "map", "players", "smokes", "bomb", "round"];
+    // Parse main body of data and check if any data was found .If none was found, return false.
+	if(parseKeyValuePairs(str, "<", "|", ">").filter(d => validDataKeys.includes(d.key)).map(d => data[d.key] = d.value).length == 0)
         return false;
-    let groups = str.(/(\<[^\>]{1,}\>)/g);
-    if(!groups)
+	// Authenticate user and replace auth with userid
+    data.userid = authenticateUser(data.auth || null);
+    if(data.userid === false)
         return false;
+    delete data.auth;
+	// Parse remaining keys
+	data.players = data.players.split(";").map(p => Object.fromEntries(parseKeyValuePairs(p, "{", ":", "}").map(d => parseKey("players", d.key, d.value)).filter(d => d[1] != null)));
+	data.smokes = data.smokes.split(";").map(s => Object.fromEntries(parseKeyValuePairs(s, "{", ":", "}").map(d => parseKey("smokes", d.key, d.value)).filter(d => d[1] != null)));
+	data.bomb = Object.fromEntries(parseKeyValuePairs(data.bomb, "{", ":", "}").map(d => parseKey("bomb", d.key, d.value)).filter(d => d[1] != null));
+	return data;
 }
 
-function parseData(str){
-    let result = {};
-    str = str.split("<>");
-    if(str.length != 2)
-        return false;
-    // Parse and validate map name
-    result.map = str[0];
-    if(maps.filter(m => result.map == m.name).length != 1)
-        return false;
-    // Split string into player strings
-    result.players = str[1].split(";").map(player => {
-        // Parse & validate data about player
-        let v = player.split(",");
-        if(v.length != 6)
-            return false;
-        if(isNaN(parseInt(v[1])) || isNaN(parseFloat(v[2])) || isNaN(parseFloat(v[3])) || isNaN(parseFloat(v[4])) || isNaN(parseInt(v[5])))
-            return false;
-        return {
-            name: decodeURIComponent(v[0]), team: parseInt(v[1]),
-            x: v[2],    y: v[3],    z: v[4],   health: v[5]
-        };
-    }).filter(p => p);
-    return result;
+// Parses str into array of key:value pairs
+function parseKeyValuePairs(str, left, middle, right){
+	let reg = new RegExp("(" + left + "[^" + right + "]{0,}" + right + ")", "g");
+	let matches = str.match(reg);
+	if(!matches)
+		return [];
+	return matches.map(m => m.slice(1, -1).split(middle)).filter(m => m.length == 2).map(m => ({key: m[0], value: m[1]}));
+}
+
+// Parses a key by making sure it's a valid key and its value is valid, returns [key, value]. On error value == null
+function parseKey(category, key, value){
+	const keys = {
+		players: {name: "s", team: "i", x: "f", y: "f", z: "f", steamid: "s", angle: "f", weaponName: "s", alive: "i", health: "i", ping: "i"},
+		smokes: {x: "f", y: "f", z: "f"},
+		bomb: {x: "f", y: "f", z: "f", time: "f"}
+	};
+	return !keys[category].hasOwnProperty(key) ? [key, null] : (keys[category][key] == "f" ? [key, parseFloat(value) || null] : (keys[category][key] == "i" ? [key, parseInt(value) || null] : [key, value]));
+}
+
+// Looks up key and checks if key is associated with a user
+function authenticateUser(key){
+    for(let user of users)
+        if(user.authKey === key)
+            return user.userid;
+    return false;
 }
