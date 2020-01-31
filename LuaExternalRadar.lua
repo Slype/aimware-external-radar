@@ -126,17 +126,13 @@ function collectSmokes()
 end
 
 function collectRounds()
-	-- [todo] Broken
-	local data = "";
+	-- [todo] Check if it works now
 	local rounds = 0;
 	local teams = entities.FindByClass("CTeam");
     for i, team in ipairs(teams) do
         rounds = rounds + team:GetPropInt('m_scoreTotal');
     end
-	if(data:len() > 0) then
-		data = data:sub(2);
-	end
-	return encodeHeader("rounds", data);
+	return encodeHeader("rounds", rounds);
 end
 
 -- Adds header to beginning of string such that string = <header|data>
@@ -180,7 +176,7 @@ function encodeKey(key, data)
 	return "{" .. key .. ":" .. data  .. "}";
 end
 
--- Listeners
+-- Listeners [todo] Disabled for now, causes weird bug
 --client.AllowListener("round_start");
 --client.AllowListener("round_end");
 
