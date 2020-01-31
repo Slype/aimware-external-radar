@@ -59,7 +59,7 @@ http.listen(socketPort, () => {
 // Parses incomming UDP data
 function parseData(str){
     let data = {};
-	const validDataKeys = ["auth", "map", "players", "smokes", "bomb", "round"];
+	const validDataKeys = ["auth", "map", "players", "smokes", "bomb", "rounds"];
     // Parse main body of data and check if any data was found .If none was found, return false.
 	if(parseKeyValuePairs(str, "<", "|", ">").filter(d => validDataKeys.includes(d.key)).map(d => data[d.key] = d.value).length == 0)
         return false;
@@ -68,7 +68,11 @@ function parseData(str){
     if(data.userid === false)
         return false;
     delete data.auth;
-	// Parse remaining keys
+	// Make sure data.rounds is a valid int & mapname is valid
+    data.rounds = parseInt(data.rounds) || null;
+    if(maps.filter(m => m.name == data.map).length || data.rounds == null)
+        return false;
+    // Parse remaining keys
 	data.players = data.players.split(";").map(p => Object.fromEntries(parseKeyValuePairs(p, "{", ":", "}").map(d => parseKey("players", d.key, d.value)).filter(d => d[1] != null)));
 	data.smokes = data.smokes.split(";").map(s => Object.fromEntries(parseKeyValuePairs(s, "{", ":", "}").map(d => parseKey("smokes", d.key, d.value)).filter(d => d[1] != null)));
 	data.bomb = Object.fromEntries(parseKeyValuePairs(data.bomb, "{", ":", "}").map(d => parseKey("bomb", d.key, d.value)).filter(d => d[1] != null));
