@@ -4,7 +4,7 @@ let data = [];
 let currentMap, currentMapImage;
 let playerDotSize;
 let smokeImage, bombImage;
-let itemImageSize;
+let itemImageSize, smokeImageSize;
 // Other settings
 let canvas;
 let container = document.body;
@@ -28,10 +28,11 @@ function setup(){
     // Load assets
     fetchAssets();
     // Setup rest
+    angleMode(DEGREES);
 	rectMode(CORNER);
     noStroke();
-    playerDotSize = width / 90;
-    itemImageSize = width / 40;
+    // Setup item sizes
+    setupItemSizes();
 }
 
 function draw(){
@@ -40,14 +41,26 @@ function draw(){
         imageMode(CORNERS);
         image(currentMapImage, 0, 0, width, height); // Display map image
         for(let player of data.players){
+            // Calculate 2D map coordinate
+            let pos = worldTo2Dcoordinates(player.x, player.y);
+            // Translate to said coordinates
+            push();
+            translate(pos.x, pos.y);
+            rotate(270 - player.angle);
+            // Draw heading of player
+            fill(255);
+            noStroke();
+            triangle(-playerDotSize / 1.8, 0, playerDotSize / 1.8, 0, 0, playerDotSize);
             // Use appropriate team color for dots
             fill(player.team == "2" ? "#e28f00" : "#14e0b7");
-            // Calculate 2D map coordinate & draw it on the map
-            circle(...worldTo2DcoordinatesArray(player.x, player.y), playerDotSize);
+            stroke(255);
+            // Draw player dot
+            circle(0, 0, playerDotSize);
+            pop();
         }
         imageMode(CENTER);
         for(let smoke of data.smokes)
-            image(smokeImage, ...worldTo2DcoordinatesArray(smoke.x, smoke.y), itemImageSize, itemImageSize);
+            image(smokeImage, ...worldTo2DcoordinatesArray(smoke.x, smoke.y), smokeImageSize, smokeImageSize);
         image(bombImage, ...worldTo2DcoordinatesArray(data.bomb.x, data.bomb.y), itemImageSize, itemImageSize);
     }
 }
@@ -68,9 +81,15 @@ async function fetchAssets(){
 window.addEventListener("resize", e => {
     let size = calcSize(container);
     resizeCanvas(size.w, size.h);
-    playerDotSize = width / 90;
-    itemImageSize = width / 40;
+    setupItemSizes();
 });
+
+// Setup size of items
+function setupItemSizes(){
+    playerDotSize = width / 90;
+    smokeImageSize = width / 20;
+    itemImageSize = width / 60;
+}
 
 socket.on("data", inData => {
     // If current map is no longer valid, update it
