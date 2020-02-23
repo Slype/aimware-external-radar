@@ -1,7 +1,7 @@
 # External Aimware Radar
 Live external csgo radar that displays players, smokes & bomb. It utilizes Aimware's ability to run LUA scripts, NodeJS, SocketIO & p5js.
 
-# Disclaimer
+## Disclaimer
 **I do not support cheating in video games. Any use of this software is considered exploting the game.**
 This project was made for learning purposes only.
 
