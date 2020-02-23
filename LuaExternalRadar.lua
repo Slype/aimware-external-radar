@@ -138,6 +138,7 @@ end
 -- Adds header to beginning of string such that string = <header|data>
 function encodeHeader(header, data)
 	-- Replace illegal chars
+	data = tostring(data)
 	data = data:gsub("<", "%3C");
 	data = data:gsub("|", "%3E");
 	data = data:gsub(">", "%7C");
