@@ -40,7 +40,7 @@ function draw(){
     if(currentMap && currentMapImage){
         imageMode(CORNERS);
         image(currentMapImage, 0, 0, width, height); // Display map image
-        for(let player of data.players){
+        for(let player of data.players.filter(p => p.name != "GOTV" && p.alive)){
             // Calculate 2D map coordinate
             let pos = worldTo2Dcoordinates(player.x, player.y);
             // Translate to said coordinates

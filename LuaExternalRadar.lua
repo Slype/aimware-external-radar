@@ -81,6 +81,9 @@ function collectPlayers()
 		-- Health
 		local alive = player:IsAlive() and 1 or 0;
 		local health = player:GetHealth();
+		if health == nil then
+			health = 0;
+		end
 		-- Ping
 		local ping = entities.GetPlayerResources():GetPropInt("m_iPing", player:GetIndex());
 		-- Combined string --
