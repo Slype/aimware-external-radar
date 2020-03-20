@@ -6,7 +6,7 @@ local serverAuthKey = "key"; -- Authentication, personal & connected to user
 local client = network.Socket("UDP");
 -- Timing variables for main loop
 local previousTickSent = 0;
-local ticksBetweenLoop = 10; -- Time between data being sent
+local ticksBetweenLoop = 5; -- Time between data being sent
 
 -- Send data over UDP by calling this function
 function sendData(data)
@@ -70,7 +70,17 @@ function collectPlayers()
 		--	steamid = playerInfo["SteamID"];
 		--end
 		-- Position & View angle
-		local x, y, z = player:GetAbsOrigin();
+		local pos = player:GetAbsOrigin();
+		local x = "";
+		local y = "";
+		local z = "";
+		if pos ~= nil then
+			pos = tostring(pos);
+			pos = split(pos, ",");
+			x = pos[1]:gsub(" ", ""):sub(2);
+			y = pos[2]:gsub(" ", "");
+			z = pos[3]:gsub(" ", ""):sub(1, -2);
+		end
 		local angle = player:GetPropFloat("m_angEyeAngles[1]");
 		-- Weapon
 		local weaponName = "";
@@ -178,6 +188,17 @@ function encodeKey(key, data)
 	data = data:gsub("}", "%7D");
 	data = data:gsub(":", "%3A");
 	return "{" .. key .. ":" .. data  .. "}";
+end
+
+function split(inputstr, sep)
+	if sep == nil then
+		sep = "%s";
+	end
+	local t = {}
+	for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+		table.insert(t, str);
+	end
+	return t;
 end
 
 -- Listeners [todo] Disabled for now, causes weird bug
