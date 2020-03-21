@@ -69,8 +69,8 @@ function parseData(str){
         return false;
     delete data.auth;
 	// Make sure data.rounds is a valid int & mapname is valid
-    data.rounds = parseInt(data.rounds) || null;
-    if(maps.filter(m => m.name == data.map).length == 0 || data.rounds == null)
+    data.rounds = parseInt(data.rounds);
+    if(maps.filter(m => m.name == data.map).length == 0 || isNaN(data.rounds))
         return false;
     // Parse remaining keys
 	data.players = data.players.split(";").map(p => Object.fromEntries(parseKeyValuePairs(p, "{", ":", "}").map(d => parseKey("players", d.key, d.value)).filter(d => d[1] != null)));
